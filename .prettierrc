@@ -1,0 +1,9 @@
+{
+  "printWidth": 110,
+  "quoteProps": "consistent",
+  "arrowParens": "avoid",
+  "endOfLine": "auto",
+  "trailingComma": "all",
+  "singleQuote": true,
+  "semi": false
+}

@@ -1,0 +1,15 @@
+{
+  "include": ["src", "scripts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["esnext"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "useUnknownInCatchVariables": false,
+    "strict": true,
+    "skipLibCheck": true
+  }
+}
