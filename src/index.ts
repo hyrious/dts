@@ -58,6 +58,7 @@ export async function build(
     plugins: [
       json(),
       dts({
+        respectExternal: true,
         ...options.dts,
         compilerOptions,
       }),
