@@ -17,6 +17,12 @@
   "scripts": {
     "build": "esbuild-dev scripts/build.ts"
   },
+  "files": [
+    "cli.js",
+    "index.js",
+    "index.d.ts",
+    "src"
+  ],
   "dependencies": {
     "@rollup/plugin-json": "^6.0.0",
     "rollup": "^3.17.2",
