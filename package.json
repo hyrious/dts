@@ -1,6 +1,6 @@
 {
   "name": "@hyrious/dts",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Invoke rollup-plugin-dts to generate bundled .d.ts file",
   "keywords": [
     "rollup",
