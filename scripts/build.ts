@@ -36,9 +36,7 @@ await build({
     {
       name: 'external-index',
       setup({ onResolve }) {
-        onResolve({ filter: /\.\/index\b/ }, () => {
-          return { path: './index.js', external: true }
-        })
+        onResolve({ filter: /\.\/index\b/ }, () => ({ path: './index.js', external: true }))
       },
     },
   ],

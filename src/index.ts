@@ -24,6 +24,8 @@ const _options: ts.CompilerOptions = {
 
 export interface BuildOptions {
   dts?: Options
+  include?: string[]
+  exclude?: string[]
 }
 
 export interface BuildResult {
@@ -37,6 +39,8 @@ export async function build(
   options: BuildOptions = {},
 ): Promise<BuildResult> {
   const compilerOptions = Object.assign({}, (options.dts || {}).compilerOptions, _options)
+  const include = options.include || []
+  const exclude = options.exclude || []
 
   const start = Date.now()
 
@@ -63,7 +67,7 @@ export async function build(
         compilerOptions,
       }),
     ],
-    external: [CommonExts, ...get_external(entry)],
+    external: [CommonExts, ...get_external(entry, new Set(include)), ...exclude],
   })
 
   const result = await bundle.write({
@@ -75,7 +79,7 @@ export async function build(
   return { output: result.output, elapsed: Date.now() - start }
 }
 
-function get_external(file: string) {
+function get_external(file: string, reject: Set<string>) {
   const pkg = escalade(file, (_, names) => {
     if (names.includes('package.json')) {
       return 'package.json'
@@ -83,7 +87,8 @@ function get_external(file: string) {
   })
   if (pkg) {
     const json = JSON.parse(readFileSync(pkg, 'utf8'))
-    return Object.keys(Object.assign({}, json.dependencies, json.peerDependencies))
+    const deps = Object.assign({}, json.dependencies, json.peerDependencies)
+    return Object.keys(deps).filter(e => !reject.has(e))
   } else {
     return []
   }

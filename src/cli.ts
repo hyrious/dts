@@ -9,7 +9,7 @@ import { build } from './index'
 
 // Sade Handler with 1 positional argument
 interface SadeHandler1<Keys extends string> {
-  (entry: string | undefined, options: Record<Keys, boolean | number | string | undefined>): void
+  (entry: string | undefined, options: Record<Keys, boolean | number | string | string[] | undefined>): void
 }
 
 function error_exit(err: Error): never {
@@ -24,21 +24,35 @@ function guess_entry(cwd: string) {
   error_exit(new Error('Cannot find entry file, guessing src/index.ts'))
 }
 
+function to_array(e: boolean | number | string | string[] | undefined) {
+  if (Array.isArray(e)) return e
+  if (typeof e === 'string') return [e]
+  return undefined
+}
+
 sade('dts')
   .version(version)
   .describe('Invoke rollup-plugin-dts to generate bundled .d.ts file')
 
   .command('build [index.ts]', 'Build a .d.ts file from a .ts file', { default: true })
   .option('-o, --outfile', 'Output file')
+  .option('-i, --include', 'Force include a module in the bundle')
+  .option('-e, --exclude', 'Force exclude a module from the bundle')
   .example('src/index.ts dist/index.d.ts')
-  .action(<SadeHandler1<'outfile'>>((entry, options) => {
+  .action(<SadeHandler1<'outfile' | 'include' | 'exclude'>>(async (entry, options) => {
     entry ||= guess_entry(process.cwd())
     const outfile = (options.outfile && String(options.outfile)) || entry.replace(/\.tsx?$/, '.d.ts')
-    build(entry, outfile)
-      .then(({ output, elapsed }) => {
-        console.log(`Built ${output.map(e => e.fileName).join(', ')} in ${Math.floor(elapsed)}ms`)
-      })
-      .catch(error_exit)
+    const include = to_array(options.include)
+    const exclude = to_array(options.exclude)
+    try {
+      if (include?.some(e => exclude?.includes(e))) {
+        throw new Error('Cannot both include and exclude a module')
+      }
+      const { output, elapsed } = await build(entry, outfile, { include, exclude })
+      console.log(`Built ${output.map(e => e.fileName).join(', ')} in ${Math.floor(elapsed)}ms`)
+    } catch (err) {
+      error_exit(err)
+    }
   }))
 
   .parse(process.argv)
