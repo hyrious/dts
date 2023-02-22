@@ -8,7 +8,7 @@ import { rollup, RollupOutput } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
 
 const CommonExts =
-  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json|png|jpe?g|gif|svg|ico|webp|avif|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf|wasm)$/
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|png|jpe?g|gif|svg|ico|webp|avif|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf|wasm)$/
 
 const _options: ts.CompilerOptions = {
   noEmit: false,
@@ -60,7 +60,9 @@ export async function build(
       return warn(warning)
     },
     plugins: [
-      json(),
+      json({
+        preferConst: true,
+      }),
       dts({
         respectExternal: true,
         ...options.dts,
