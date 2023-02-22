@@ -58,6 +58,7 @@ export async function build(
       return warn(warning)
     },
     plugins: [
+      ignore(CommonExts),
       json({
         preferConst: true,
       }),
@@ -68,7 +69,7 @@ export async function build(
       }),
       fix_trivia(),
     ],
-    external: [CommonExts, ...get_external(entry, new Set(include)), ...exclude],
+    external: [...get_external(entry, new Set(include)), ...exclude],
   })
 
   const result = await bundle.write({
@@ -100,6 +101,17 @@ function fix_trivia(): Plugin {
     name: 'fix-trivia',
     renderChunk(code) {
       return code.replace(/^(\s*)(const|enum)\s/gm, '$1declare $2 ')
+    },
+  }
+}
+
+function ignore(re: RegExp): Plugin {
+  return {
+    name: 'ignore',
+    load(id) {
+      if (re.test(id)) {
+        return ''
+      }
     },
   }
 }
