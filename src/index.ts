@@ -25,6 +25,10 @@ export interface BuildOptions {
   dts?: Options
   include?: string[]
   exclude?: string[]
+  experimental?: {
+    /** Post process the result and replace all `* as` to `{...names}` */
+    expandStar?: boolean
+  }
 }
 
 export interface BuildResult {
@@ -40,6 +44,7 @@ export async function build(
   const compilerOptions = Object.assign({}, (options.dts || {}).compilerOptions, _options)
   const include = options.include || []
   const exclude = options.exclude || []
+  const expandStar = options.experimental?.expandStar
 
   const start = Date.now()
 
@@ -68,6 +73,7 @@ export async function build(
         compilerOptions,
       }),
       fix_trivia(),
+      expandStar && expand_star(),
     ],
     external: [...get_external(entry, new Set(include)), ...exclude],
   })
@@ -111,6 +117,45 @@ function ignore(re: RegExp): Plugin {
     load(id) {
       if (re.test(id)) {
         return ''
+      }
+    },
+  }
+}
+
+function expand_star(): Plugin {
+  return {
+    name: 'expand-star',
+    renderChunk(code) {
+      const namespaces: [variable: string, module: string][] = []
+      code.replace(/^import \* as (\S+) from ['"]([-@\w]+)/gm, (_, ns, external) => {
+        namespaces.push([ns, external])
+        return ''
+      })
+      if (namespaces.length) {
+        const names: Record<string, Record<string, true>> = {}
+        for (const [ns, module] of namespaces) {
+          names[ns] ||= {}
+          const re = new RegExp(`^import {(.+)} from ['"]${module}['"];$`, 'gm')
+          code = code.replace(re, (_, imports: string) => {
+            for (let name of imports.split(',')) {
+              name = name.trim()
+              if (name) names[ns][name] = true
+            }
+            return ''
+          })
+        }
+        for (const [ns] of namespaces) {
+          names[ns] ||= {}
+          const re = new RegExp(`\\b${ns.replace(/\$/g, '\\$')}\\.(\\w+)\\b`, 'g')
+          code = code.replace(re, (_, name) => {
+            names[ns][name] = true
+            return name
+          })
+        }
+        code = code.replace(/^import \* as (\S+) from\b/gm, (_, ns) => {
+          return `import { ${Object.keys(names[ns]).join(', ')} } from`
+        })
+        return code
       }
     },
   }
