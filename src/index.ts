@@ -3,7 +3,6 @@ import type ts from 'typescript'
 import json from '@rollup/plugin-json'
 import escalade from 'escalade/sync'
 import { readFileSync, rmSync } from 'fs'
-import { basename, dirname } from 'path'
 import { Plugin, rollup, RollupOutput } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
 
@@ -48,7 +47,6 @@ export async function build(
 
   const bundle = await rollup({
     input: entry,
-    output: { file: basename(outfile) },
     onwarn(warning, warn) {
       if (
         warning.code === 'UNRESOLVED_IMPORT' ||
@@ -74,7 +72,7 @@ export async function build(
   })
 
   const result = await bundle.write({
-    dir: dirname(outfile),
+    file: outfile,
     format: 'es',
     exports: 'named',
   })
