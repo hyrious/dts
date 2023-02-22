@@ -3,8 +3,8 @@ import type ts from 'typescript'
 import json from '@rollup/plugin-json'
 import escalade from 'escalade/sync'
 import { readFileSync, rmSync } from 'fs'
-import { dirname } from 'path'
-import { rollup, RollupOutput } from 'rollup'
+import { basename, dirname } from 'path'
+import { Plugin, rollup, RollupOutput } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
 
 const CommonExts =
@@ -48,7 +48,7 @@ export async function build(
 
   const bundle = await rollup({
     input: entry,
-    output: { file: outfile },
+    output: { file: basename(outfile) },
     onwarn(warning, warn) {
       if (
         warning.code === 'UNRESOLVED_IMPORT' ||
@@ -68,6 +68,7 @@ export async function build(
         ...options.dts,
         compilerOptions,
       }),
+      fix_trivia(),
     ],
     external: [CommonExts, ...get_external(entry, new Set(include)), ...exclude],
   })
@@ -93,5 +94,14 @@ function get_external(file: string, reject: Set<string>) {
     return Object.keys(deps).filter(e => !reject.has(e))
   } else {
     return []
+  }
+}
+
+function fix_trivia(): Plugin {
+  return {
+    name: 'fix-trivia',
+    renderChunk(code) {
+      return code.replace(/^(\s*)(const|enum)\s/gm, '$1declare $2 ')
+    },
   }
 }
