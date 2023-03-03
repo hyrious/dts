@@ -1,10 +1,14 @@
 import type ts from 'typescript'
 
-import json from '@rollup/plugin-json'
+import json, { RollupJsonOptions } from '@rollup/plugin-json'
 import escalade from 'escalade/sync'
-import { readFileSync, rmSync } from 'fs'
-import { Plugin, rollup, RollupOutput } from 'rollup'
+import { readFileSync, rmSync, writeFileSync } from 'fs'
+import { Plugin, rollup, RollupOutput, TransformHook } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
+import { tmpdir } from 'os'
+import { join, relative } from 'path'
+
+export { version } from '../package.json'
 
 const CommonExts =
   /\.(css|less|sass|scss|styl|stylus|pcss|postcss|png|jpe?g|gif|svg|ico|webp|avif|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf|wasm)$/
@@ -48,6 +52,11 @@ export async function build(
 
   const start = Date.now()
 
+  const dts_ = dts({
+    respectExternal: true,
+    ...options.dts,
+    compilerOptions,
+  })
   const bundle = await rollup({
     input: entry,
     onwarn(warning, warn) {
@@ -60,18 +69,7 @@ export async function build(
       }
       return warn(warning)
     },
-    plugins: [
-      ignore(CommonExts),
-      json({
-        preferConst: true,
-      }),
-      dts({
-        respectExternal: true,
-        ...options.dts,
-        compilerOptions,
-      }),
-      expandStar && expand_star(),
-    ],
+    plugins: [ignore(CommonExts), wrap(json, dts_), dts_, expandStar && expand_star()],
     external: [...get_external(entry, new Set(include)), ...exclude],
   })
 
@@ -84,6 +82,34 @@ export async function build(
   })
 
   return { output: result.output, elapsed: Date.now() - start }
+}
+
+function wrap(json: (options?: RollupJsonOptions) => Plugin, dts: Plugin): Plugin {
+  const pwd = process.cwd()
+
+  const jsonPlugin = json({
+    preferConst: true,
+  })
+
+  const tempfiles: string[] = []
+
+  return {
+    name: 'wrap(json)',
+    transform(code, id) {
+      const result = (jsonPlugin.transform as TransformHook).call(this, code, id)
+      if (!result || typeof result === 'string') return result
+      const tempfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
+      // rollup-plugin-dts uses `ts.sys.readFile` to create a new program for this file
+      // so we have to write this virtual file to disk
+      writeFileSync(tempfile, result.code!)
+      tempfiles.push(tempfile)
+      return (dts.transform as TransformHook).call(this, result.code!, tempfile)
+    },
+    generateBundle() {
+      for (const file of tempfiles) rmSync(file)
+      tempfiles.length = 0
+    },
+  }
 }
 
 function get_external(file: string, reject: Set<string>) {
