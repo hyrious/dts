@@ -48,8 +48,6 @@ export async function build(
 
   const start = Date.now()
 
-  rmSync(outfile, { force: true })
-
   const bundle = await rollup({
     input: entry,
     onwarn(warning, warn) {
@@ -72,11 +70,12 @@ export async function build(
         ...options.dts,
         compilerOptions,
       }),
-      fix_trivia(),
       expandStar && expand_star(),
     ],
     external: [...get_external(entry, new Set(include)), ...exclude],
   })
+
+  rmSync(outfile, { force: true })
 
   const result = await bundle.write({
     file: outfile,
@@ -99,15 +98,6 @@ function get_external(file: string, reject: Set<string>) {
     return Object.keys(deps).filter(e => !reject.has(e))
   } else {
     return []
-  }
-}
-
-function fix_trivia(): Plugin {
-  return {
-    name: 'fix-trivia',
-    renderChunk(code) {
-      return code.replace(/^(\s*)(const|enum)\s/gm, '$1declare $2 ')
-    },
   }
 }
 
