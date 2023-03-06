@@ -130,6 +130,11 @@ function get_external(file: string, reject: Set<string>) {
 function ignore(re: RegExp): Plugin {
   return {
     name: 'ignore',
+    resolveId(id) {
+      if (re.test(id)) {
+        return id
+      }
+    },
     load(id) {
       if (re.test(id)) {
         return ''
