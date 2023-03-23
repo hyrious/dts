@@ -100,7 +100,7 @@ function wrap(json: (options?: RollupJsonOptions) => Plugin, dts: Plugin): Plugi
       if (!result || typeof result === 'string') return result
       const tempfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
       // rollup-plugin-dts uses `ts.sys.readFile` to create a new program for this file
-      // so we have to write this virtual file to disk
+      // so we have to write this "virtual" file to disk -- becomes real
       writeFileSync(tempfile, result.code!)
       tempfiles.push(tempfile)
       return (dts.transform as TransformHook).call(this, result.code!, tempfile)
