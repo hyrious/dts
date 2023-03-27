@@ -45,7 +45,7 @@ export async function build(
   outfile: string,
   options: BuildOptions = {},
 ): Promise<BuildResult> {
-  const compilerOptions = Object.assign({}, (options.dts || {}).compilerOptions, _options)
+  const compilerOptions = Object.assign({}, options.dts?.compilerOptions, _options)
   const include = options.include || []
   const exclude = options.exclude || []
   const expandStar = options.experimental?.expandStar

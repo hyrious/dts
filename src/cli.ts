@@ -1,5 +1,6 @@
 import cleanStack from 'clean-stack'
 import sade from 'sade'
+import { bgBlue, black } from 'yoctocolors'
 
 import { existsSync } from 'fs'
 import { join } from 'path'
@@ -55,7 +56,8 @@ sade('dts')
         exclude,
         experimental: { expandStar },
       })
-      console.log(`Built ${output.map(e => e.fileName).join(', ')} in ${Math.floor(elapsed)}ms`)
+      const output_files = output.map(e => e.fileName).join(', ')
+      console.log(`${bgBlue(black(' DTS '))} Built ${output_files} in ${Math.floor(elapsed)}ms`)
     } catch (err) {
       error_exit(err)
     }

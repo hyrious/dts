@@ -21,6 +21,7 @@ await build({
   bundle: true,
   format: 'esm',
   outdir: '.',
+  treeShaking: true,
   platform: 'node',
   external: Object.keys(pkg.dependencies),
   plugins: [
@@ -37,6 +38,16 @@ await build({
       name: 'external-index',
       setup({ onResolve }) {
         onResolve({ filter: /\.\/index\b/ }, () => ({ path: './index.js', external: true }))
+      },
+    },
+    {
+      name: 'purify-yoctocolors',
+      setup({ onLoad }) {
+        onLoad({ filter: /\byoctocolors\b/ }, args => {
+          let text = readFileSync(args.path, 'utf8')
+          text = text.replaceAll(/= format/g, '= /* @__PURE__ */ format')
+          return { contents: text }
+        })
       },
     },
   ],

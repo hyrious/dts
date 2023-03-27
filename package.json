@@ -35,6 +35,7 @@
     "@types/node": "^18.15.5",
     "clean-stack": "^5.2.0",
     "esbuild": "^0.17.14",
-    "escalade": "^3.1.1"
+    "escalade": "^3.1.1",
+    "yoctocolors": "^1.0.0"
   }
 }
