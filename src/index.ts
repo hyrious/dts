@@ -18,6 +18,7 @@ const _options: ts.CompilerOptions = {
   declaration: true,
   emitDeclarationOnly: true,
   noEmitOnError: true,
+  allowJs: true,
   checkJs: false,
   declarationMap: false,
   skipLibCheck: true,

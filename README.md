@@ -4,7 +4,7 @@
 
 ## Usage
 
-```
+```bash
 npx @hyrious/dts src/index.ts -o dist/index.d.ts
 ```
 

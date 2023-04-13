@@ -28,13 +28,13 @@
     "rollup": "^3.20.2",
     "rollup-plugin-dts": "^5.3.0",
     "sade": "^1.8.1",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "devDependencies": {
-    "@hyrious/esbuild-dev": "^0.10.1",
-    "@types/node": "^18.15.5",
+    "@hyrious/esbuild-dev": "^0.10.2",
+    "@types/node": "^18.15.11",
     "clean-stack": "^5.2.0",
-    "esbuild": "^0.17.14",
+    "esbuild": "^0.17.16",
     "escalade": "^3.1.1",
     "yoctocolors": "^1.0.0"
   }
