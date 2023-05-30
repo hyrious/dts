@@ -122,7 +122,9 @@ function get_external(file: string, reject: Set<string>) {
   if (pkg) {
     const json = JSON.parse(readFileSync(pkg, 'utf8'))
     const deps = Object.assign({}, json.dependencies, json.peerDependencies)
-    return Object.keys(deps).filter(e => !reject.has(e))
+    return Object.keys(deps)
+      .filter(e => !reject.has(e))
+      .map(dep => new RegExp(`^${dep}($|\\/|\\\\)`))
   } else {
     return []
   }
