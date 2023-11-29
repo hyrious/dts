@@ -8,21 +8,22 @@
     "typescript",
     "bundle"
   ],
+  "repository": "hyrious/dts",
   "license": "MIT",
   "author": "hyrious <hyrious@outlook.com>",
   "type": "module",
   "exports": "./index.js",
   "types": "./index.d.ts",
   "bin": "./cli.js",
-  "scripts": {
-    "build": "esbuild-dev scripts/build.ts"
-  },
   "files": [
     "cli.js",
     "index.js",
     "index.d.ts",
     "src"
   ],
+  "scripts": {
+    "build": "esbuild-dev scripts/build.ts"
+  },
   "dependencies": {
     "@rollup/plugin-json": "^6.0.1",
     "rollup": "^4.6.0",
