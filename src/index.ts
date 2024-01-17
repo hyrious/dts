@@ -70,7 +70,7 @@ export async function build(
       }
       return warn(warning)
     },
-    plugins: [ignore(CommonExts), wrap(json, dts_), dts_, expandStar && expand_star()],
+    plugins: [ignore(CommonExts, dts_), wrap(json, dts_), dts_, expandStar && expand_star()],
     external: [...get_external(entry, new Set(include)), ...exclude],
   })
 
@@ -130,11 +130,16 @@ function get_external(file: string, reject: Set<string>) {
   }
 }
 
-function ignore(re: RegExp): Plugin {
+function ignore(re: RegExp, dts: Plugin): Plugin {
+  const pwd = process.cwd()
+
+  const tempfiles: string[] = []
+  const id2tempfile: Record<string, string> = Object.create(null)
+
   return {
     name: 'ignore',
     resolveId(id) {
-      if (re.test(id)) {
+      if (re.test(id) || id.endsWith('?inline')) {
         return id
       }
     },
@@ -142,6 +147,25 @@ function ignore(re: RegExp): Plugin {
       if (re.test(id)) {
         return ''
       }
+      if (id.endsWith('?inline')) {
+        const tempfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
+        // rollup-plugin-dts uses `ts.sys.readFile` to create a new program for this file
+        // so we have to write this "virtual" file to disk -- becomes real
+        const code = `declare const __inline: string; export default __inline`
+        writeFileSync(tempfile, code)
+        tempfiles.push(tempfile)
+        id2tempfile[id] = tempfile
+        return code
+      }
+    },
+    transform(code, id) {
+      if (id.endsWith('?inline')) {
+        return (dts.transform as TransformHook).call(this, code, id2tempfile[id])
+      }
+    },
+    generateBundle() {
+      for (const file of tempfiles) rmSync(file)
+      tempfiles.length = 0
     },
   }
 }
