@@ -1,19 +1,62 @@
 import type ts from 'typescript'
 
-import json, { RollupJsonOptions } from '@rollup/plugin-json'
+import json from '@rollup/plugin-json'
 import escalade from 'escalade/sync'
 import { readFileSync, rmSync, writeFileSync } from 'fs'
-import { Plugin, rollup, RollupOutput, TransformHook } from 'rollup'
-import dts, { Options } from 'rollup-plugin-dts'
 import { tmpdir } from 'os'
 import { join, relative } from 'path'
+import { Plugin, RollupOutput, TransformHook, TransformResult, rollup } from 'rollup'
+import dts, { Options } from 'rollup-plugin-dts'
 
 export { version } from '../package.json'
 
-const CommonExts =
-  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|png|jpe?g|gif|svg|ico|webp|avif|mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf|wasm)$/
+// https://github.com/vitejs/vite/blob/-/packages/vite/src/node/constants.ts
+const CSS_LANGS_RE = /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 
-const _options: ts.CompilerOptions = {
+const KNOWN_ASSET_TYPES = [
+  // images
+  'apng',
+  'png',
+  'jpe?g',
+  'jfif',
+  'pjpeg',
+  'pjp',
+  'gif',
+  'svg',
+  'ico',
+  'webp',
+  'avif',
+
+  // media
+  'mp4',
+  'webm',
+  'ogg',
+  'mp3',
+  'wav',
+  'flac',
+  'aac',
+  'opus',
+  'mov',
+  'm4a',
+  'vtt',
+
+  // fonts
+  'woff2?',
+  'eot',
+  'ttf',
+  'otf',
+
+  // other
+  'webmanifest',
+  'pdf',
+  'txt',
+]
+
+const DEFAULT_ASSETS_RE = new RegExp(`\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`)
+
+const suppress_codes = new Set(['UNRESOLVED_IMPORT', 'CIRCULAR_DEPENDENCY', 'EMPTY_BUNDLE'])
+
+const default_compiler_options: ts.CompilerOptions = {
   noEmit: false,
   declaration: true,
   emitDeclarationOnly: true,
@@ -30,10 +73,6 @@ export interface BuildOptions {
   dts?: Options
   include?: string[]
   exclude?: string[]
-  experimental?: {
-    /** Post process the result and replace all `* as` to `{...names}` */
-    expandStar?: boolean
-  }
 }
 
 export interface BuildResult {
@@ -46,31 +85,53 @@ export async function build(
   outfile: string,
   options: BuildOptions = {},
 ): Promise<BuildResult> {
-  const compilerOptions = Object.assign({}, options.dts?.compilerOptions, _options)
+  const compilerOptions = Object.assign({}, options.dts?.compilerOptions, default_compiler_options)
   const include = options.include || []
   const exclude = options.exclude || []
-  const expandStar = options.experimental?.expandStar
 
   const start = Date.now()
 
-  const dts_ = dts({
+  const pwd = process.cwd()
+
+  const json_plugin = json({
+    preferConst: true,
+  })
+
+  const dts_plugin = dts({
     respectExternal: true,
     ...options.dts,
     compilerOptions,
   })
+
   const bundle = await rollup({
     input: entry,
     onwarn(warning, warn) {
-      if (
-        warning.code === 'UNRESOLVED_IMPORT' ||
-        warning.code === 'CIRCULAR_DEPENDENCY' ||
-        warning.code === 'EMPTY_BUNDLE'
-      ) {
-        return
-      }
+      if (suppress_codes.has(warning.code!)) return
       return warn(warning)
     },
-    plugins: [ignore(CommonExts, dts_), wrap(json, dts_), dts_, expandStar && expand_star()],
+    plugins: [
+      // import "./style.css" = nothing
+      ignore(CSS_LANGS_RE),
+      // import "./a.jpg" = nothing
+      ignore(DEFAULT_ASSETS_RE),
+      // import "./package.json" handled by the json plugin
+      custom('json', dts_plugin, void 0, void 0, function (this: any, code, id, tmpfiles) {
+        const result = (json_plugin.transform as TransformHook).call(this, code, id)
+        if (!result || typeof result === 'string') return result
+        const tmpfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
+        writeFileSync(tmpfile, result.code!)
+        tmpfiles.push(tmpfile)
+        return (dts_plugin.transform as TransformHook).call(this, result.code!, tmpfile)
+      }),
+      // import "./foo?inline" = export default string
+      custom(
+        'inline',
+        dts_plugin,
+        id => id.endsWith('?inline'),
+        'declare const __inline: string; export default __inline',
+      ),
+      dts_plugin,
+    ],
     external: [...get_external(entry, new Set(include)), ...exclude],
   })
 
@@ -83,34 +144,6 @@ export async function build(
   })
 
   return { output: result.output, elapsed: Date.now() - start }
-}
-
-function wrap(json: (options?: RollupJsonOptions) => Plugin, dts: Plugin): Plugin {
-  const pwd = process.cwd()
-
-  const jsonPlugin = json({
-    preferConst: true,
-  })
-
-  const tempfiles: string[] = []
-
-  return {
-    name: 'wrap(json)',
-    transform(code, id) {
-      const result = (jsonPlugin.transform as TransformHook).call(this, code, id)
-      if (!result || typeof result === 'string') return result
-      const tempfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
-      // rollup-plugin-dts uses `ts.sys.readFile` to create a new program for this file
-      // so we have to write this "virtual" file to disk -- becomes real
-      writeFileSync(tempfile, result.code!)
-      tempfiles.push(tempfile)
-      return (dts.transform as TransformHook).call(this, result.code!, tempfile)
-    },
-    generateBundle() {
-      for (const file of tempfiles) rmSync(file)
-      tempfiles.length = 0
-    },
-  }
 }
 
 function get_external(file: string, reject: Set<string>) {
@@ -130,81 +163,54 @@ function get_external(file: string, reject: Set<string>) {
   }
 }
 
-function ignore(re: RegExp, dts: Plugin): Plugin {
-  const pwd = process.cwd()
-
-  const tempfiles: string[] = []
-  const id2tempfile: Record<string, string> = Object.create(null)
-
+function ignore(re: RegExp): Plugin {
   return {
     name: 'ignore',
     resolveId(id) {
-      if (re.test(id) || id.endsWith('?inline')) {
-        return id
-      }
+      if (re.test(id)) return id
     },
     load(id) {
-      if (re.test(id)) {
-        return ''
-      }
-      if (id.endsWith('?inline')) {
-        const tempfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
-        // rollup-plugin-dts uses `ts.sys.readFile` to create a new program for this file
-        // so we have to write this "virtual" file to disk -- becomes real
-        const code = `declare const __inline: string; export default __inline`
-        writeFileSync(tempfile, code)
-        tempfiles.push(tempfile)
-        id2tempfile[id] = tempfile
-        return code
-      }
-    },
-    transform(code, id) {
-      if (id.endsWith('?inline')) {
-        return (dts.transform as TransformHook).call(this, code, id2tempfile[id])
-      }
-    },
-    generateBundle() {
-      for (const file of tempfiles) rmSync(file)
-      tempfiles.length = 0
+      if (re.test(id)) return ''
     },
   }
 }
 
-function expand_star(): Plugin {
+function custom(
+  name: string,
+  dts: Plugin,
+  test?: (id: string) => boolean,
+  code?: string,
+  transform?: (code: string, id: string, tmpfiles: string[]) => TransformResult,
+): Plugin {
+  const pwd = process.cwd()
+
+  const tmpfiles: string[] = []
+  const id2tmpfile = Object.create(null)
+
   return {
-    name: 'expand-star',
-    renderChunk(code) {
-      const namespaces: [variable: string, module: string][] = []
-      code.replace(/^import \* as (\S+) from ['"]([-@\w]+)/gm, (_, ns, external) => {
-        namespaces.push([ns, external])
-        return ''
-      })
-      if (namespaces.length) {
-        const names: Record<string, Record<string, true>> = {}
-        for (const [ns, module] of namespaces) {
-          names[ns] ||= {}
-          const re = new RegExp(`^import {(.+)} from ['"]${module}['"];$`, 'gm')
-          code = code.replace(re, (_, imports: string) => {
-            for (let name of imports.split(',')) {
-              name = name.trim()
-              if (name) names[ns][name] = true
-            }
-            return ''
-          })
-        }
-        for (const [ns] of namespaces) {
-          names[ns] ||= {}
-          const re = new RegExp(`\\b${ns.replace(/\$/g, '\\$')}\\.(\\w+)\\b`, 'g')
-          code = code.replace(re, (_, name) => {
-            names[ns][name] = true
-            return name
-          })
-        }
-        code = code.replace(/^import \* as (\S+) from\b/gm, (_, ns) => {
-          return `import { ${Object.keys(names[ns]).join(', ')} } from`
-        })
+    name,
+    resolveId(id) {
+      if (test && test(id)) return id
+    },
+    load(id) {
+      if (test && test(id) && code) {
+        const tmpfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
+        writeFileSync(tmpfile, code)
+        tmpfiles.push(tmpfile)
+        id2tmpfile[id] = tmpfile
         return code
       }
+    },
+    transform(code, id) {
+      if (!test && transform) {
+        return transform.call(this, code, id, tmpfiles)
+      } else if (test && test(id)) {
+        return (dts.transform as TransformHook).call(this, code, id2tmpfile[id])
+      }
+    },
+    generateBundle() {
+      for (const file of tmpfiles) rmSync(file)
+      tmpfiles.length = 0
     },
   }
 }

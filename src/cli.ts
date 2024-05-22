@@ -39,14 +39,12 @@ sade('dts')
   .option('-o, --outfile', 'Output file')
   .option('-i, --include', 'Force include a module in the bundle')
   .option('-e, --exclude', 'Force exclude a module from the bundle')
-  .option('--expand-star', 'Expand namespace imports to named imports (experimental)')
-  .example('src/index.ts dist/index.d.ts')
-  .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'expand-star'>>(async (entry, options) => {
+  .example('src/index.ts -o dist/index.d.ts')
+  .action(<SadeHandler1<'outfile' | 'include' | 'exclude'>>(async (entry, options) => {
     entry ||= guess_entry(process.cwd())
     const outfile = (options.outfile && String(options.outfile)) || entry.replace(/\.tsx?$/, '.d.ts')
     const include = to_array(options.include)
     const exclude = to_array(options.exclude)
-    const expandStar = !!options['expand-star']
     try {
       if (include?.some(e => exclude?.includes(e))) {
         throw new Error('Cannot both include and exclude a module')
@@ -54,7 +52,6 @@ sade('dts')
       const { output, elapsed } = await build(entry, outfile, {
         include,
         exclude,
-        experimental: { expandStar },
       })
       const output_files = output.map(e => e.fileName).join(', ')
       console.log(`${bgBlue(black(' DTS '))} Built ${output_files} in ${Math.floor(elapsed)}ms`)
