@@ -14,6 +14,26 @@ await build({
   external: Object.keys(pkg.dependencies),
 }).catch(() => process.exit(1))
 
+rmSync('patch.js', { force: true })
+
+await build({
+  entryPoints: ['src/patch.ts'],
+  bundle: true,
+  format: 'esm',
+  outdir: '.',
+  platform: 'node',
+  external: Object.keys(pkg.dependencies),
+}).catch(() => process.exit(1))
+
+await build({
+  entryPoints: ['src/index.ts'],
+  bundle: true,
+  format: 'esm',
+  outdir: '.',
+  platform: 'node',
+  external: Object.keys(pkg.dependencies),
+}).catch(() => process.exit(1))
+
 rmSync('cli.js', { force: true })
 
 await build({
@@ -53,4 +73,4 @@ await build({
   ],
 }).catch(() => process.exit(1))
 
-spawnSync('node', ['cli.js', 'src/index.ts', '-o', 'index.d.ts'], { stdio: 'inherit' })
+spawnSync('node', ['cli.js', 'src/index.ts', '-o', 'index.d.ts', '-p'], { stdio: 'inherit' })

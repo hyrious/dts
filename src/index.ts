@@ -70,13 +70,17 @@ const default_compiler_options: ts.CompilerOptions = {
 }
 
 export interface BuildOptions {
+  /// See [`rollup-plugin-dts`](https://github.com/Swatinem/rollup-plugin-dts).
   dts?: Options
+  /// Force include a module in the types bundle even if it should be externalized.
   include?: string[]
+  /// Force exclude a module in the types bundle.
   exclude?: string[]
 }
 
 export interface BuildResult {
   output: RollupOutput['output']
+  /// In miliseconds.
   elapsed: number
 }
 
