@@ -1,7 +1,7 @@
 {
   "name": "@hyrious/dts",
   "type": "module",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Invoke rollup-plugin-dts to generate bundled .d.ts file",
   "author": "hyrious <hyrious@outlook.com>",
   "license": "MIT",
