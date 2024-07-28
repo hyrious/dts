@@ -1,4 +1,3 @@
-import cleanStack from 'clean-stack'
 import sade from 'sade'
 import { bgBlue, black } from 'yoctocolors'
 
@@ -6,15 +5,23 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import mod from 'module'
 
-import { version } from '../package.json'
+import { name, version, description } from '../package.json'
 
 // Sade Handler with 1 positional argument
 interface SadeHandler1<Keys extends string> {
   (entry: string | undefined, options: Record<Keys, boolean | number | string | string[] | undefined>): void
 }
 
-function error_exit(err: Error): never {
-  console.error(cleanStack(err.stack, { pretty: true, basePath: process.cwd() }))
+function error_exit(err: any): never {
+  if (err.loc) {
+    console.warn(`Error parsing: ${err.loc.file}:${err.loc.line}:${err.loc.column}`)
+  }
+  if (err.frame) {
+    console.warn(err.message)
+    console.warn(err.frame)
+  } else {
+    console.error(err.message || err.stack || err + '')
+  }
   process.exit(1)
 }
 
@@ -31,9 +38,9 @@ function to_array(e: boolean | number | string | string[] | undefined) {
   return undefined
 }
 
-sade('dts')
+sade(name)
   .version(version)
-  .describe('Invoke rollup-plugin-dts to generate bundled .d.ts file')
+  .describe(description)
 
   .command('build [index.ts]', 'Build a .d.ts file from a .ts file', { default: true })
   .option('-o, --outfile', 'Output file')
@@ -43,7 +50,10 @@ sade('dts')
   .example('src/index.ts -o dist/index.d.ts')
   .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'patch'>>(async (entry, options) => {
     entry ||= guess_entry(process.cwd())
-    const outfile = (options.outfile && String(options.outfile)) || entry.replace(/\.tsx?$/, '.d.ts')
+    entry = entry.replace(/[\\]/g, '/')
+    const outfile =
+      (options.outfile && String(options.outfile)) ||
+      entry.replace(/\.tsx?$/, '.d.ts').replace(/\bsrc\//, 'dist/')
     const include = to_array(options.include)
     const exclude = to_array(options.exclude)
     try {

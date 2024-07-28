@@ -27,17 +27,16 @@
   },
   "dependencies": {
     "@rollup/plugin-json": "^6.1.0",
-    "rollup": "^4.17.2",
+    "rollup": "^4.19.1",
     "rollup-plugin-dts": "^6.1.1",
     "sade": "^1.8.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.4"
   },
   "devDependencies": {
-    "@hyrious/esbuild-dev": "^0.10.5",
-    "@types/node": "^20.12.12",
-    "clean-stack": "^5.2.0",
-    "esbuild": "^0.21.3",
+    "@hyrious/esbuild-dev": "^0.10.6",
+    "@types/node": "^20.14.12",
+    "esbuild": "^0.23.0",
     "escalade": "^3.1.2",
-    "yoctocolors": "^2.0.2"
+    "yoctocolors": "^2.1.1"
   }
 }

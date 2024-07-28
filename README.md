@@ -10,6 +10,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.2.4
+
+- Remove `preserveSymlinks` config, which seems work differently than setting it.
+
 ### 0.2.0
 
 - Upgrade `rollup-plugin-dts` to 6.x (was 5.x)

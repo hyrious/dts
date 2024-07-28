@@ -66,7 +66,6 @@ const default_compiler_options: ts.CompilerOptions = {
   declarationMap: false,
   skipLibCheck: true,
   stripInternal: true,
-  preserveSymlinks: false,
 }
 
 export interface BuildOptions {
@@ -89,7 +88,7 @@ export async function build(
   outfile: string,
   options: BuildOptions = {},
 ): Promise<BuildResult> {
-  const compilerOptions = Object.assign({}, options.dts?.compilerOptions, default_compiler_options)
+  const compilerOptions = Object.assign({}, default_compiler_options, options.dts?.compilerOptions)
   const include = options.include || []
   const exclude = options.exclude || []
 
