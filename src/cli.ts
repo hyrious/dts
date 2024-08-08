@@ -38,6 +38,17 @@ function to_array(e: boolean | number | string | string[] | undefined) {
   return undefined
 }
 
+function to_dict(aliases: string[] | undefined) {
+  const dict: Record<string, string> = {}
+  if (aliases) {
+    for (const entry of aliases) {
+      const [key, value] = entry.split('=')
+      dict[key] = value
+    }
+  }
+  return dict
+}
+
 sade(name)
   .version(version)
   .describe(description)
@@ -47,8 +58,9 @@ sade(name)
   .option('-i, --include', 'Force include a module in the bundle')
   .option('-e, --exclude', 'Force exclude a module from the bundle')
   .option('-p, --patch', 'Patch rollup-plugin-dts to handle `/// doc comments`')
+  .option('-a, --alias', 'Rename an external path to something else')
   .example('src/index.ts -o dist/index.d.ts')
-  .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'patch'>>(async (entry, options) => {
+  .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'patch' | 'alias'>>(async (entry, options) => {
     entry ||= guess_entry(process.cwd())
     entry = entry.replace(/[\\]/g, '/')
     const outfile =
@@ -56,6 +68,7 @@ sade(name)
       entry.replace(/\.tsx?$/, '.d.ts').replace(/\bsrc\//, 'dist/')
     const include = to_array(options.include)
     const exclude = to_array(options.exclude)
+    const alias = to_dict(to_array(options.alias))
     try {
       if (include?.some(e => exclude?.includes(e))) {
         throw new Error('Cannot both include and exclude a module')
@@ -67,6 +80,7 @@ sade(name)
       const { output, elapsed } = await build(entry, outfile, {
         include,
         exclude,
+        alias,
       })
       const output_files = output.map(e => e.fileName).join(', ')
       console.log(`${bgBlue(black(' DTS '))} Built ${output_files} in ${Math.floor(elapsed)}ms`)

@@ -75,6 +75,8 @@ export interface BuildOptions {
   include?: string[]
   /// Force exclude a module in the types bundle.
   exclude?: string[]
+  /// Rename external paths to something else.
+  alias?: Record<string, string>
 }
 
 export interface BuildResult {
@@ -113,6 +115,7 @@ export async function build(
       return warn(warning)
     },
     plugins: [
+      options.alias && alias(options.alias),
       // import "./style.css" = nothing
       ignore(CSS_LANGS_RE),
       // import "./a.jpg" = nothing
@@ -174,6 +177,17 @@ function ignore(re: RegExp): Plugin {
     },
     load(id) {
       if (re.test(id)) return ''
+    },
+  }
+}
+
+function alias(dict: Record<string, string>): Plugin {
+  return {
+    name: 'alias',
+    resolveId(id) {
+      if (id in dict) {
+        return { id: dict[id], external: true }
+      }
     },
   }
 }
