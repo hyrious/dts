@@ -1,5 +1,5 @@
 import sade from 'sade'
-import { bgBlue, black } from 'yoctocolors'
+import { bgBlue, bgGray, black } from 'yoctocolors'
 
 import { existsSync } from 'fs'
 import { join } from 'path'
@@ -61,6 +61,11 @@ sade(name)
   .option('-a, --alias', 'Rename an external path to something else')
   .example('src/index.ts -o dist/index.d.ts')
   .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'patch' | 'alias'>>(async (entry, options) => {
+    if (process.env.NO_DTS) {
+      console.log(`${bgGray(black(' DTS '))} Skipping build due to env NO_DTS`)
+      return
+    }
+
     entry ||= guess_entry(process.cwd())
     entry = entry.replace(/[\\]/g, '/')
     const outfile =

@@ -1,15 +1,7 @@
 {
-  "include": ["src", "scripts"],
+  "extends": "@hyrious/configs/tsconfig.casual.json",
   "compilerOptions": {
-    "lib": ["esnext"],
-    "noEmit": true,
-    "target": "esnext",
-    "module": "preserve",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "useUnknownInCatchVariables": false
+    "types": ["node"],
+    "verbatimModuleSyntax": false
   }
 }

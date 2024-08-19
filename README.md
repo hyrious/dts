@@ -10,6 +10,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.2.6
+
+- Add `NO_DTS` env to disable dts generation when using the CLI.
+
 ### 0.2.5
 
 - Add `--alias` option to rename external modules, because `rollup-plugin-dts` does not read `"paths"` when they are externalized.
