@@ -57,10 +57,14 @@ sade(name)
   .option('-o, --outfile', 'Output file')
   .option('-i, --include', 'Force include a module in the bundle')
   .option('-e, --exclude', 'Force exclude a module from the bundle')
+  .option('-m, --empty', 'Force ignore a module (treat as empty) in the bundle')
   .option('-p, --patch', 'Patch rollup-plugin-dts to handle `/// doc comments`')
   .option('-a, --alias', 'Rename an external path to something else')
   .example('src/index.ts -o dist/index.d.ts')
-  .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'patch' | 'alias'>>(async (entry, options) => {
+  .action(<SadeHandler1<'outfile' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty'>>(async (
+    entry,
+    options,
+  ) => {
     if (process.env.NO_DTS) {
       console.log(`${bgGray(black(' DTS '))} Skipping build due to env NO_DTS`)
       return
@@ -73,6 +77,7 @@ sade(name)
       entry.replace(/\.tsx?$/, '.d.ts').replace(/\bsrc\//, 'dist/')
     const include = to_array(options.include)
     const exclude = to_array(options.exclude)
+    const empty = to_array(options.empty)
     const alias = to_dict(to_array(options.alias))
     try {
       if (include?.some(e => exclude?.includes(e))) {
@@ -85,6 +90,7 @@ sade(name)
       const { output, elapsed } = await build(entry, outfile, {
         include,
         exclude,
+        empty,
         alias,
       })
       const output_files = output.map(e => e.fileName).join(', ')

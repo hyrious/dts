@@ -7,6 +7,7 @@ import { tmpdir } from 'os'
 import { join, relative } from 'path'
 import { Plugin, RollupOutput, TransformHook, TransformResult, rollup } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
+import { build as esbuild } from 'esbuild'
 
 export { version } from '../package.json'
 
@@ -105,6 +106,8 @@ export interface BuildOptions {
   include?: string[]
   /// Force exclude a module in the types bundle.
   exclude?: string[]
+  /// Force ignore a module (treat as empty) in the types bundle.
+  empty?: string[]
   /// Rename external paths to something else.
   alias?: Record<string, string>
 }
@@ -123,6 +126,7 @@ export async function build(
   const compilerOptions = Object.assign({}, default_compiler_options, options.dts?.compilerOptions)
   const include = options.include || []
   const exclude = options.exclude || []
+  const empty = options.empty || []
 
   const start = Date.now()
 
@@ -146,6 +150,10 @@ export async function build(
     },
     plugins: [
       options.alias && alias(options.alias),
+      // ignore some modules
+      empty.length > 0 && ignore(new RegExp(`^(${empty.join('|')})(\\/|\\\\|$)`)),
+      // resolve tsconfig paths with esbuild
+      resolve(),
       // import "./style.css" = nothing
       ignore(CSS_LANGS_RE),
       // import "./a.jpg" = nothing
@@ -196,6 +204,40 @@ function get_external(file: string, reject: Set<string>) {
       .map(dep => new RegExp(`^${dep}($|\\/|\\\\)`))
   } else {
     return []
+  }
+}
+
+function resolve(): Plugin {
+  return {
+    name: 'resolve',
+    async resolveId(id, importer, options) {
+      if (options.isEntry || id[0] === '\0' || id.includes('virtual:')) return
+
+      let result: string | undefined
+      await esbuild({
+        stdin: {
+          contents: `import ${JSON.stringify(id)}`,
+          resolveDir: importer ? join(importer, '..') : process.cwd(),
+        },
+        write: false,
+        bundle: true,
+        platform: 'node',
+        logLevel: 'silent',
+        plugins: [
+          {
+            name: 'resolve',
+            setup({ onLoad }) {
+              onLoad({ filter: /()/ }, args => {
+                result = args.path
+                return { contents: '' }
+              })
+            },
+          },
+        ],
+      }).catch(() => void 0)
+
+      return result
+    },
   }
 }
 
