@@ -66,6 +66,36 @@ const default_compiler_options: ts.CompilerOptions = {
   declarationMap: false,
   skipLibCheck: true,
   stripInternal: true,
+
+  // Turn off all strict type checking options so that it can probably pass the type-check.
+  // The dts plugin will compile type definitions for .ts files, and it will search for
+  // the tsconfig.json from user's code base. This should be fine, however, in some cases
+  // it cannot infer some types correctly. Example:
+  //
+  //     emitter.on('event', (data) => {})
+  //                          ^^^^ This type is infered, otherwise it will be `any`.
+  //                               However, an `any` type without `noImplicitAny` will cause an error.
+  //
+  // I honestly don't know why. But I can turn off all strict options to avoid this.
+  // This also means that this package should not be used as a type-checking linter.
+  strict: false,
+  alwaysStrict: false,
+  noImplicitAny: false,
+  noImplicitThis: false,
+  strictBindCallApply: false,
+  strictFunctionTypes: false,
+  strictNullChecks: false,
+  strictPropertyInitialization: false,
+  useUnknownInCatchVariables: false,
+  exactOptionalPropertyTypes: false,
+  noFallthroughCasesInSwitch: false,
+  noImplicitOverride: false,
+  noImplicitReturns: false,
+  noPropertyAccessFromIndexSignature: false,
+  noUncheckedIndexedAccess: false,
+  noUnusedLocals: false,
+  noUnusedParameters: false,
+  // Maybe I will be missing some options here, please let me know if you find one.
 }
 
 export interface BuildOptions {

@@ -81,7 +81,7 @@ sade(name)
       if (options.patch && mod.register) {
         mod.register('./patch.js', import.meta.url)
       }
-      const { build } = await import('./index')
+      const { build } = await import('./index.js')
       const { output, elapsed } = await build(entry, outfile, {
         include,
         exclude,

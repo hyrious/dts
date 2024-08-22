@@ -8,6 +8,13 @@
 npx @hyrious/dts src/index.ts -o dist/index.d.ts
 ```
 
+> [!IMPORTANT]
+> Do not use this package as a type-checking linter. It intentionally turns off all strict type-checking options to make it work with any codebase. My goal is to generate `.d.ts` files instead of checking types.
+
+### Bonus
+
+Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comments */`).
+
 ## Changelog
 
 ### 0.2.6
