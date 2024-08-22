@@ -17,6 +17,12 @@ Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comme
 
 ## Changelog
 
+### 0.2.7
+
+- Add `--empty` option to mark modules as empty, like virtual modules.
+- Resolve paths alias with esbuild.
+- Turn off all strict options.
+
 ### 0.2.6
 
 - Add `NO_DTS` env to disable dts generation when using the CLI.
