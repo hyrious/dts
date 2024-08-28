@@ -17,6 +17,10 @@ Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comme
 
 ## Changelog
 
+### 0.2.8
+
+- Downgrade `esbuild` to `^0.21.5` to be compatible with `vite` related toolchains.
+
 ### 0.2.7
 
 - Add `--empty` option to mark modules as empty, like virtual modules.
