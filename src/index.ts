@@ -236,6 +236,12 @@ function resolve(): Plugin {
         ],
       }).catch(() => void 0)
 
+      // The resolved path can be a JavaScript file, in that case
+      // just fallback to dts plugin to find the correct file.
+      if (result && /\.[cm]?js$/.test(result)) {
+        return
+      }
+
       return result
     },
   }
