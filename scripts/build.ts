@@ -15,6 +15,9 @@ await build({
   platform: 'node',
   logLevel: 'info',
   mainFields: ['module', 'main'],
+  alias: {
+    yoctocolors: './node_modules/yoctocolors/base.js',
+  },
   plugins: [
     external({
       auto: [{ filter: /\.js$/ }],

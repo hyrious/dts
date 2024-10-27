@@ -207,10 +207,16 @@ function get_external(file: string, reject: Set<string>) {
   }
 }
 
+// The dts plugin doesn't handle tsconfig "paths" aliases (where I guess it
+// should, because it already depends on `typescript`, thus it has (?) enough
+// tools to implement the resolver). So I resolve them using esbuild here.
+// Ideally I should just use TypeScript itself to resolve modules, but it seems
+// too hard.
 function resolve(): Plugin {
   return {
     name: 'resolve',
     async resolveId(id, importer, options) {
+      // Ignore the entrypoints and any virtual files which are likely to not using path aliases.
       if (options.isEntry || id[0] === '\0' || id.includes('virtual:')) return
 
       let result: string | undefined
@@ -236,8 +242,7 @@ function resolve(): Plugin {
         ],
       }).catch(() => void 0)
 
-      // The resolved path can be a JavaScript file, in that case
-      // just fallback to dts plugin to find the correct file.
+      // Aliases are likely pointing to TS files.
       if (result && /\.[cm]?js$/.test(result)) {
         return
       }

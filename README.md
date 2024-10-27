@@ -17,6 +17,10 @@ Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comme
 
 ## Changelog
 
+### 0.2.10
+
+- Change the dependency version of `esbuild` to `*`.
+
 ### 0.2.9
 
 - Fix: Do not resolve JavaScript files.
