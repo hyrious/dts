@@ -1,11 +1,10 @@
 import type ts from 'typescript'
 
-import json from '@rollup/plugin-json'
 import escalade from 'escalade/sync'
 import { readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
-import { join, relative } from 'path'
-import { Plugin, RollupOutput, TransformHook, TransformResult, rollup } from 'rollup'
+import { dirname, join, relative } from 'path'
+import { InputOption, Plugin, RollupOutput, TransformHook, TransformResult, rollup } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
 import { build as esbuild } from 'esbuild'
 
@@ -73,6 +72,10 @@ const default_compiler_options: ts.CompilerOptions = {
 }
 
 export interface BuildOptions {
+  /// Example: `["src/index.ts"]`, which is the same as `{ index: 'src/index.ts' }`.
+  entryPoints: InputOption
+  /// Output directory, defaults to `"dist"`.
+  outdir?: string
   /// See [`rollup-plugin-dts`](https://github.com/Swatinem/rollup-plugin-dts).
   dts?: Options
   /// Force include a module in the types bundle even if it should be externalized.
@@ -91,23 +94,14 @@ export interface BuildResult {
   elapsed: number
 }
 
-export async function build(
-  entry: string,
-  outfile: string,
-  options: BuildOptions = {},
-): Promise<BuildResult> {
+export async function build(options: BuildOptions = { entryPoints: 'src/index.ts' }): Promise<BuildResult> {
+  const outdir = options.outdir || 'dist'
   const compilerOptions = Object.assign({}, default_compiler_options, options.dts?.compilerOptions)
   const include = options.include || []
   const exclude = options.exclude || []
   const empty = options.empty || []
 
   const start = Date.now()
-
-  const pwd = process.cwd()
-
-  const json_plugin = json({
-    preferConst: true,
-  })
 
   const dts_plugin = dts({
     respectExternal: true,
@@ -116,7 +110,7 @@ export async function build(
   })
 
   const bundle = await rollup({
-    input: entry,
+    input: options.entryPoints,
     onwarn(warning, warn) {
       if (suppress_codes.has(warning.code!)) return
       return warn(warning)
@@ -125,21 +119,14 @@ export async function build(
       options.alias && alias(options.alias),
       // ignore some modules
       empty.length > 0 && ignore(new RegExp(`^(${empty.join('|')})(\\/|\\\\|$)`)),
+      // import "./package.json" = externalize
+      external(/\.json$/, outdir),
       // resolve tsconfig paths with esbuild
       resolve(),
       // import "./style.css" = nothing
       ignore(CSS_LANGS_RE),
       // import "./a.jpg" = nothing
       ignore(DEFAULT_ASSETS_RE),
-      // import "./package.json" handled by the json plugin
-      custom('json', dts_plugin, void 0, void 0, function (this: any, code, id, tmpfiles) {
-        const result = (json_plugin.transform as TransformHook).call(this, code, id)
-        if (!result || typeof result === 'string') return result
-        const tmpfile = join(tmpdir(), relative(pwd, id).replace(/[\/\\]/g, '+') + '.ts')
-        writeFileSync(tmpfile, result.code!)
-        tmpfiles.push(tmpfile)
-        return (dts_plugin.transform as TransformHook).call(this, result.code!, tmpfile)
-      }),
       // import "./foo?inline" = export default string
       custom(
         'inline',
@@ -149,13 +136,11 @@ export async function build(
       ),
       dts_plugin,
     ],
-    external: [...get_external(entry, new Set(include)), ...exclude],
+    external: [...get_external(options.entryPoints, new Set(include)), ...exclude],
   })
 
-  rmSync(outfile, { force: true })
-
   const result = await bundle.write({
-    file: outfile,
+    dir: outdir,
     format: 'es',
     exports: 'named',
   })
@@ -163,8 +148,15 @@ export async function build(
   return { output: result.output, elapsed: Date.now() - start }
 }
 
-function get_external(file: string, reject: Set<string>) {
-  const pkg = escalade(file, (_, names) => {
+function sample_file(file: InputOption): string {
+  if (typeof file === 'string') return file
+  if (Array.isArray(file)) return file[0]
+  for (const key in file) return file[key]
+  throw new Error('No entrypoints found')
+}
+
+function get_external(files: InputOption, reject: Set<string>) {
+  const pkg = escalade(sample_file(files), (_, names) => {
     if (names.includes('package.json')) {
       return 'package.json'
     }
@@ -284,6 +276,25 @@ function custom(
     generateBundle() {
       for (const file of tmpfiles) rmSync(file)
       tmpfiles.length = 0
+    },
+  }
+}
+
+function external(test: RegExp, outdir: string): Plugin {
+  return {
+    name: 'external',
+    resolveId(id, importer, options) {
+      // Ignore the entrypoints and any virtual files which are likely to not handled by this plugin.
+      if (options.isEntry || id[0] === '\0' || id.includes('virtual:')) return
+
+      if (test.test(id) && importer) {
+        // Change relative id to relative to the outfile.
+        if (id.startsWith('.')) {
+          id = relative(outdir, join(dirname(importer), id)).replace(/\\/g, '/')
+          if (id[0] !== '.') id = './' + id
+        }
+        return { id, external: true }
+      }
     },
   }
 }

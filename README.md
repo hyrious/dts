@@ -20,6 +20,21 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.0
+
+- **Breaking**: Change `--outfile` to `--file` so it will be more like rollup.
+
+- Add `-d` option to specify the output directory, and now it supports multiple entry points!
+
+  The input args grammar is like esbuild:
+
+  ```console
+  $ dts foo=src/foo.ts bar=src/buzz.ts
+  Will build dist/foo.d.ts and dist/bar.d.ts
+  ```
+
+- Remove the `json` plugin. Now json imports are externalized and the path will be rewritten to relative to the output file.
+
 ### 0.2.11
 
 - Temporarily patch `rollup-plugin-dts` (using `-p`) to force emit (ignore any type error).

@@ -56,4 +56,4 @@ await build({
   ],
 }).catch(() => process.exit(1))
 
-spawnSync('node', ['cli.js', 'src/index.ts', '-o', 'index.d.ts', '-p'], { stdio: 'inherit' })
+spawnSync('node', ['cli.js', '-o', 'index.d.ts', '-p'], { stdio: 'inherit' })

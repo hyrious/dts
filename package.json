@@ -26,7 +26,6 @@
     "build": "esbuild-dev scripts/build.ts"
   },
   "dependencies": {
-    "@rollup/plugin-json": "^6.1.0",
     "esbuild": "*",
     "rollup": "^4.24.1",
     "rollup-plugin-dts": "^6.1.1",
