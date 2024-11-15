@@ -8,14 +8,21 @@
 npx @hyrious/dts src/index.ts -o dist/index.d.ts
 ```
 
-> [!IMPORTANT]
-> Do not use this package as a type-checking linter. It intentionally turns off all strict type-checking options to make it work with any codebase. My goal is to generate `.d.ts` files instead of checking types.
-
 ### Bonus
 
-Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comments */`).
+- Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comments */`).
+- Add env `NO_DTS` to turn the CLI to no-op, useful in local developing without type changes.
+
+> [!IMPORTANT]
+> Do not use this package as a type-checking linter.
+> It intentionally ignores any type error to make it work with any codebase.
+> My goal is to generate `.d.ts` files instead of checking types.
 
 ## Changelog
+
+### 0.2.11
+
+- Temporarily patch `rollup-plugin-dts` (using `-p`) to force emit (ignore any type error).
 
 ### 0.2.10
 
