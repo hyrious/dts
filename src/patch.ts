@@ -30,9 +30,9 @@ function readAndMangleComments(name) {
   if (file && !name.includes('node_modules'))
     file = file.replace(/(?<=^|\\n)(?:([ \\t]*)\\/\\/\\/.*\\r?\\n)+/g, (comment, space) => {
       if (comment.indexOf("\\n") + 1 === comment.length) {
-        return \`\${space}/** \${comment.slice(space.length).replace(/\\/\\/\\/ ?/g, "").trimEnd()} */\\n\`;
+        return \`\${space}/** \${comment.slice(space.length).replace(/\\/\\/\\/ ?/g, "").trimEnd().replace(/\\*\\//g, '*\\u200B/')} */\\n\`;
       }
-      return \`\${space}/**\\n\${space}\${comment.slice(space.length).replace(/\\/\\/\\/ ?/g, " * ")}\${space} */\\n\`;
+      return \`\${space}/**\\n\${space}\${comment.slice(space.length).replace(/\\/\\/\\/ ?/g, " * ").replace(/\\*\\//g, '*\\u200B/')}\${space} */\\n\`;
     });
   return file;
 }
