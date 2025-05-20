@@ -1,4 +1,5 @@
 node_modules
+dist
 /index.js
 /index.d.ts
 /patch.js

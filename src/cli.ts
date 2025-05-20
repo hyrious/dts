@@ -111,7 +111,7 @@ function to_dict(aliases: string[] | undefined) {
   return dict
 }
 
-type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty'
+type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty' | 'cjs'
 
 sade(name)
   .version(version)
@@ -119,12 +119,13 @@ sade(name)
 
   .command('build', 'Build .d.ts files from .ts files', { default: true })
   .option('-o, --file', 'Output file, defaults to "src/index.ts"')
-  .option('-d. --dir', 'Output directory, defaults to "dist"')
+  .option('-d, --dir', 'Output directory, defaults to "dist"')
   .option('-i, --include', 'Force include a module in the bundle')
   .option('-e, --exclude', 'Force exclude a module from the bundle')
   .option('-m, --empty', 'Force ignore a module (treat as empty) in the bundle')
   .option('-p, --patch', 'Patch rollup-plugin-dts to handle `/// doc comments`')
   .option('-a, --alias', 'Rename an external path to something else')
+  .option('--cjs', 'Assume the output is CommonJS', false)
   .example('src/index.ts -o dist/index.d.ts')
   .action(<SadeHandler0<Keys>>(async options => {
     if (process.env.NO_DTS) {
@@ -139,6 +140,7 @@ sade(name)
     const exclude = to_array(options.exclude)
     const empty = to_array(options.empty)
     const alias = to_dict(to_array(options.alias))
+    const cjs = !!options.cjs
     try {
       if (include?.some(e => exclude?.includes(e))) {
         throw new Error('Cannot both include and exclude a module')
@@ -154,6 +156,7 @@ sade(name)
         exclude,
         empty,
         alias,
+        cjs,
       })
       const output_files = output.map(e => e.fileName).join(', ')
       console.log(`${bgBlue(black(' DTS '))} Built ${output_files} in ${Math.floor(elapsed)}ms`)

@@ -20,6 +20,14 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.1
+
+- Add `--cjs` to enable `fix-dts-default-cjs-exports` to transform CJS types.
+
+  This assumes the default export will become the whole CJS export (`module.exports = default_export`). So the bundler should be configured correctly to do so. For example, [Rollup](https://rollupjs.org/repl/?shareable=JTdCJTIyZXhhbXBsZSUyMiUzQSUyMiUyMiUyQyUyMm1vZHVsZXMlMjIlM0ElNUIlN0IlMjJjb2RlJTIyJTNBJTIyZnVuY3Rpb24lMjBmb28oKSUyMCU3QiU1Q24lMjAlMjByZXR1cm4lMjAxJTVDbiU3RCU1Q24lNUNuZXhwb3J0JTIwZGVmYXVsdCUyMGZvbyUyMiUyQyUyMmlzRW50cnklMjIlM0F0cnVlJTJDJTIybmFtZSUyMiUzQSUyMm1haW4uanMlMjIlN0QlNUQlMkMlMjJvcHRpb25zJTIyJTNBJTdCJTIyb3V0cHV0JTIyJTNBJTdCJTIyZm9ybWF0JTIyJTNBJTIyY2pzJTIyJTdEJTdEJTdE) will do this when there's only one export (and is default export).
+
+- Fix a typo bug which causes `-d` not working.
+
 ### 0.3.0
 
 - **Breaking**: Change `--outfile` to `--file` so it will be more like rollup.

@@ -1,6 +1,7 @@
 import type ts from 'typescript'
 
 import escalade from 'escalade/sync'
+import { FixDtsDefaultCjsExportsPlugin } from 'fix-dts-default-cjs-exports/rollup'
 import { readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join, relative } from 'path'
@@ -86,6 +87,9 @@ export interface BuildOptions {
   empty?: string[]
   /// Rename external paths to something else.
   alias?: Record<string, string>
+  /// Assume the output is in CommonJS, use `fix-dts-default-cjs-exports` to transform some types.
+  /// For example, `export { foo as default }` will become `export = foo`.
+  cjs?: boolean
 }
 
 export interface BuildResult {
@@ -143,6 +147,7 @@ export async function build(options: BuildOptions = { entryPoints: 'src/index.ts
     dir: outdir,
     format: 'es',
     exports: 'named',
+    plugins: [options.cjs && FixDtsDefaultCjsExportsPlugin()],
   })
 
   return { output: result.output, elapsed: Date.now() - start }
