@@ -11,13 +11,6 @@ function patch(url: string, source: string) {
   if (/node_modules[\\/]rollup-plugin-dts/.test(url)) {
     source = decode(source)
 
-    // Temporarily port https://github.com/Swatinem/rollup-plugin-dts/pull/320 here.
-    // When rollup-plugin-dts published it will be removed.
-    source = source.replace(
-      /true\)\;[\s\t\n]+if \(emitSkipped/,
-      'true, undefined, true);                if (emitSkipped',
-    )
-
     source = source.replaceAll('ts.createCompilerHost(', 'createCompilerHost(')
     source += `
 function createCompilerHost(compilerOptions, setParentNodes = false) {
