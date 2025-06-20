@@ -141,6 +141,9 @@ export async function build(options: BuildOptions = { entryPoints: 'src/index.ts
       dts_plugin,
     ],
     external: [...get_external(options.entryPoints, new Set(include)), ...exclude],
+    // Improves performance as the cache is not generated.
+    // https://github.com/rollup/rollup/blob/fa4b28/cli/run/index.ts#L67
+    cache: false,
   })
 
   const result = await bundle.write({
