@@ -20,6 +20,11 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.3
+
+- Add env `DTS_FAST=1` to enable `--fast` for easier usage.
+- Change the API output `reused` to the cache location.
+
 ### 0.3.2
 
 - Add `--fast` to reuse last build output for impatient users like me.

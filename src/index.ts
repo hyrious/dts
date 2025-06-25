@@ -102,17 +102,17 @@ export interface BuildResult {
   output: RollupOutput['output']
   /// In miliseconds.
   elapsed: number
-  /// Is from the last build output.
-  reused?: boolean
+  /// Is from the last build output, returns the output location.
+  reused?: string
 }
 
 export async function build(options: BuildOptions = { entryPoints: 'src/index.ts' }): Promise<BuildResult> {
   const outdir = options.outdir || 'dist'
   if (options.reuseLastOutput) {
     const start = Date.now()
-    const output = restore_outputs(outdir)
-    if (output) {
-      return { output, elapsed: Date.now() - start, reused: true }
+    const restored = restore_outputs(outdir)
+    if (restored) {
+      return { output: restored.output, elapsed: Date.now() - start, reused: restored.cache_dir }
     }
   }
 
@@ -169,9 +169,7 @@ export async function build(options: BuildOptions = { entryPoints: 'src/index.ts
     plugins: [options.cjs && FixDtsDefaultCjsExportsPlugin()],
   })
 
-  if (options.reuseLastOutput) {
-    save_outputs(outdir, result)
-  }
+  save_outputs(outdir, result)
 
   return { output: result.output, elapsed: Date.now() - start }
 }
@@ -357,7 +355,7 @@ function save_outputs(outdir: string, result: RollupOutput) {
   writeFileSync(join(cache_dir, '.output.json'), JSON.stringify(result))
 }
 
-function restore_outputs(outdir: string): RollupOutput['output'] | undefined {
+function restore_outputs(outdir: string): { output: RollupOutput['output']; cache_dir: string } | undefined {
   const cache_dir = find_cache_dir(outdir)
   if (!existsSync(cache_dir)) return
   const output_file = join(cache_dir, '.output.json')
@@ -371,7 +369,7 @@ function restore_outputs(outdir: string): RollupOutput['output'] | undefined {
         cpSync(src, dist, { recursive: true })
       }
     }
-    return output
+    return { output, cache_dir }
   } catch (err) {
     console.error(err)
   }

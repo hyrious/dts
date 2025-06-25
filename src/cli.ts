@@ -2,7 +2,7 @@ import sade from 'sade'
 import { bgBlue, bgGray, black } from 'yoctocolors'
 
 import { existsSync } from 'fs'
-import { basename, dirname, join } from 'path'
+import { basename, dirname, join, relative } from 'path'
 import mod from 'module'
 
 import { name, version, description } from '../package.json'
@@ -142,7 +142,7 @@ sade(name)
     const empty = to_array(options.empty)
     const alias = to_dict(to_array(options.alias))
     const cjs = !!options.cjs
-    const fast = !!options.fast
+    const fast = !!options.fast || !!(process.env.DTS_FAST && !process.env.CI)
     try {
       if (include?.some(e => exclude?.includes(e))) {
         throw new Error('Cannot both include and exclude a module')
@@ -163,7 +163,10 @@ sade(name)
       })
       const output_files = output.map(e => e.fileName).join(', ')
       const built = reused ? 'Restored' : 'Built'
-      console.log(`${bgBlue(black(' DTS '))} ${built} ${output_files} in ${Math.floor(elapsed)}ms`)
+      console.log(
+        `${bgBlue(black(' DTS '))} ${built} ${output_files} in ${Math.floor(elapsed)}ms` +
+          (reused ? ` from ${relative(process.cwd(), reused)}` : ''),
+      )
     } catch (err) {
       error_exit(err)
     }
