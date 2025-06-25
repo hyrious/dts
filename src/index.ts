@@ -2,12 +2,13 @@ import type ts from 'typescript'
 
 import escalade from 'escalade/sync'
 import { FixDtsDefaultCjsExportsPlugin } from 'fix-dts-default-cjs-exports/rollup'
-import { readFileSync, rmSync, writeFileSync } from 'fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join, relative } from 'path'
 import { InputOption, Plugin, RollupOutput, TransformHook, TransformResult, rollup } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
 import { build as esbuild } from 'esbuild'
+import { createHash } from 'crypto'
 
 export { version } from '../package.json'
 
@@ -90,16 +91,31 @@ export interface BuildOptions {
   /// Assume the output is in CommonJS, use `fix-dts-default-cjs-exports` to transform some types.
   /// For example, `export { foo as default }` will become `export = foo`.
   cjs?: boolean
+  /// Reuse last build output, if available.
+  /// Note that this does not validate if any input files have changed.
+  /// Use it only if you know what you are doing.
+  /// This is useful for repeated builds where the output files may be erased by other build tools.
+  reuseLastOutput?: boolean
 }
 
 export interface BuildResult {
   output: RollupOutput['output']
   /// In miliseconds.
   elapsed: number
+  /// Is from the last build output.
+  reused?: boolean
 }
 
 export async function build(options: BuildOptions = { entryPoints: 'src/index.ts' }): Promise<BuildResult> {
   const outdir = options.outdir || 'dist'
+  if (options.reuseLastOutput) {
+    const start = Date.now()
+    const output = restore_outputs(outdir)
+    if (output) {
+      return { output, elapsed: Date.now() - start, reused: true }
+    }
+  }
+
   const compilerOptions = Object.assign({}, default_compiler_options, options.dts?.compilerOptions)
   const include = options.include || []
   const exclude = options.exclude || []
@@ -152,6 +168,10 @@ export async function build(options: BuildOptions = { entryPoints: 'src/index.ts
     exports: 'named',
     plugins: [options.cjs && FixDtsDefaultCjsExportsPlugin()],
   })
+
+  if (options.reuseLastOutput) {
+    save_outputs(outdir, result)
+  }
 
   return { output: result.output, elapsed: Date.now() - start }
 }
@@ -304,5 +324,55 @@ function external(test: RegExp, outdir: string): Plugin {
         return { id, external: true }
       }
     },
+  }
+}
+
+function hash(str: string): string {
+  return createHash('sha1').update(str).digest('hex')
+}
+
+function find_cache_dir(dir: string, rm = false): string {
+  let cache_dir = escalade(dir, (_, names) => {
+    if (names.includes('package.json')) {
+      return 'node_modules/.cache/hyrious-dts--' + hash(dir)
+    }
+  })
+  cache_dir ||= join(tmpdir(), 'hyrious-dts--' + hash(dir))
+  if (rm) {
+    rmSync(cache_dir, { recursive: true, force: true })
+  }
+  mkdirSync(cache_dir, { recursive: true })
+  return cache_dir
+}
+
+function save_outputs(outdir: string, result: RollupOutput) {
+  const cache_dir = find_cache_dir(outdir, true)
+  result.output.forEach(chunk => {
+    const src = join(outdir, chunk.fileName)
+    const dist = join(cache_dir, chunk.fileName)
+    if (existsSync(src)) {
+      cpSync(src, dist, { recursive: true })
+    }
+  })
+  writeFileSync(join(cache_dir, '.output.json'), JSON.stringify(result))
+}
+
+function restore_outputs(outdir: string): RollupOutput['output'] | undefined {
+  const cache_dir = find_cache_dir(outdir)
+  if (!existsSync(cache_dir)) return
+  const output_file = join(cache_dir, '.output.json')
+  if (!existsSync(output_file)) return
+  try {
+    const { output } = JSON.parse(readFileSync(output_file, 'utf8')) as RollupOutput
+    for (const chunk of output) {
+      const src = join(cache_dir, chunk.fileName)
+      const dist = join(outdir, chunk.fileName)
+      if (existsSync(src)) {
+        cpSync(src, dist, { recursive: true })
+      }
+    }
+    return output
+  } catch (err) {
+    console.error(err)
   }
 }

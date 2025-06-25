@@ -20,6 +20,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.2
+
+- Add `--fast` to reuse last build output for impatient users like me.
+
 ### 0.3.1
 
 - Add `--cjs` to enable `fix-dts-default-cjs-exports` to transform CJS types.

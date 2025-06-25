@@ -111,7 +111,7 @@ function to_dict(aliases: string[] | undefined) {
   return dict
 }
 
-type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty' | 'cjs'
+type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty' | 'cjs' | 'fast'
 
 sade(name)
   .version(version)
@@ -126,6 +126,7 @@ sade(name)
   .option('-p, --patch', 'Patch rollup-plugin-dts to handle `/// doc comments`')
   .option('-a, --alias', 'Rename an external path to something else')
   .option('--cjs', 'Assume the output is CommonJS', false)
+  .option('--fast', 'Reuse last build output, if available', false)
   .example('src/index.ts -o dist/index.d.ts')
   .action(<SadeHandler0<Keys>>(async options => {
     if (process.env.NO_DTS) {
@@ -141,6 +142,7 @@ sade(name)
     const empty = to_array(options.empty)
     const alias = to_dict(to_array(options.alias))
     const cjs = !!options.cjs
+    const fast = !!options.fast
     try {
       if (include?.some(e => exclude?.includes(e))) {
         throw new Error('Cannot both include and exclude a module')
@@ -149,7 +151,7 @@ sade(name)
         mod.register('./patch.js', import.meta.url)
       }
       const { build } = await import('./index.js')
-      const { output, elapsed } = await build({
+      const { output, elapsed, reused } = await build({
         entryPoints,
         outdir,
         include,
@@ -157,9 +159,11 @@ sade(name)
         empty,
         alias,
         cjs,
+        reuseLastOutput: fast,
       })
       const output_files = output.map(e => e.fileName).join(', ')
-      console.log(`${bgBlue(black(' DTS '))} Built ${output_files} in ${Math.floor(elapsed)}ms`)
+      const built = reused ? 'Restored' : 'Built'
+      console.log(`${bgBlue(black(' DTS '))} ${built} ${output_files} in ${Math.floor(elapsed)}ms`)
     } catch (err) {
       error_exit(err)
     }
