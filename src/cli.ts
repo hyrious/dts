@@ -2,7 +2,7 @@ import sade from 'sade'
 import { bgBlue, bgGray, black } from 'yoctocolors'
 
 import { existsSync } from 'fs'
-import { basename, dirname, join, relative } from 'path'
+import { basename, dirname, extname, join, relative } from 'path'
 import mod from 'module'
 
 import { name, version, description } from '../package.json'
@@ -111,6 +111,12 @@ function to_dict(aliases: string[] | undefined) {
   return dict
 }
 
+function non_dts(file: SadeValue): string | undefined {
+  if (typeof file === 'string' && file && extname(file) && !file.endsWith('.d.ts')) {
+    return basename(file)
+  }
+}
+
 type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty' | 'cjs' | 'fast'
 
 sade(name)
@@ -137,6 +143,8 @@ sade(name)
     const entryPoints = parse_entry(process.cwd(), options._)
     const outdir = update_entry_points(entryPoints, options.file, options.dir)
 
+    const overrideFile = non_dts(options.file)
+
     const include = to_array(options.include)
     const exclude = to_array(options.exclude)
     const empty = to_array(options.empty)
@@ -160,6 +168,7 @@ sade(name)
         alias,
         cjs,
         reuseLastOutput: fast,
+        outputOptions: overrideFile ? { entryFileNames: overrideFile } : undefined,
       })
       const output_files = output.map(e => e.fileName).join(', ')
       const built = reused ? 'Restored' : 'Built'

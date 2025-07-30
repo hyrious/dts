@@ -20,6 +20,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.4
+
+- Fix `-o file.d.mts` should emit correct file.
+
 ### 0.3.3
 
 - Add env `DTS_FAST=1` to enable `--fast` for easier usage.

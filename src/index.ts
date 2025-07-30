@@ -5,7 +5,15 @@ import { FixDtsDefaultCjsExportsPlugin } from 'fix-dts-default-cjs-exports/rollu
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join, relative } from 'path'
-import { InputOption, Plugin, RollupOutput, TransformHook, TransformResult, rollup } from 'rollup'
+import {
+  InputOption,
+  OutputOptions,
+  Plugin,
+  RollupOutput,
+  TransformHook,
+  TransformResult,
+  rollup,
+} from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
 import { build as esbuild } from 'esbuild'
 import { createHash } from 'crypto'
@@ -96,6 +104,8 @@ export interface BuildOptions {
   /// Use it only if you know what you are doing.
   /// This is useful for repeated builds where the output files may be erased by other build tools.
   reuseLastOutput?: boolean
+  /// Override rollup output options.
+  outputOptions?: OutputOptions
 }
 
 export interface BuildResult {
@@ -167,6 +177,7 @@ export async function build(options: BuildOptions = { entryPoints: 'src/index.ts
     format: 'es',
     exports: 'named',
     plugins: [options.cjs && FixDtsDefaultCjsExportsPlugin()],
+    ...options.outputOptions,
   })
 
   save_outputs(outdir, result)
