@@ -117,20 +117,21 @@ function non_dts(file: SadeValue): string | undefined {
   }
 }
 
-type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty' | 'cjs' | 'fast'
+type Keys = 'file' | 'dir' | 'include' | 'exclude' | 'patch' | 'alias' | 'empty' | 'cjs' | 'fast' | 'oxc'
 
 sade(name)
   .version(version)
   .describe(description)
 
   .command('build', 'Build .d.ts files from .ts files', { default: true })
-  .option('-o, --file', 'Output file, defaults to "src/index.ts"')
+  .option('-o, --file', 'Output file, defaults to "dist/{input}.d.ts"')
   .option('-d, --dir', 'Output directory, defaults to "dist"')
   .option('-i, --include', 'Force include a module in the bundle')
   .option('-e, --exclude', 'Force exclude a module from the bundle')
   .option('-m, --empty', 'Force ignore a module (treat as empty) in the bundle')
-  .option('-p, --patch', 'Patch rollup-plugin-dts to handle `/// doc comments`')
+  .option('-p, --patch', 'Patch rollup-plugin-dts to handle `/// doc comments` and enable --oxc')
   .option('-a, --alias', 'Rename an external path to something else')
+  .option('--oxc', 'Generate types with oxc-transform, must combine usage with -p', false)
   .option('--cjs', 'Assume the output is CommonJS', false)
   .option('--fast', 'Reuse last build output, if available', false)
   .example('src/index.ts -o dist/index.d.ts')
@@ -156,7 +157,10 @@ sade(name)
         throw new Error('Cannot both include and exclude a module')
       }
       if (options.patch && mod.register) {
-        mod.register('./patch.js', import.meta.url)
+        mod.register(options.oxc ? './patch.js?oxc=1' : './patch.js', import.meta.url)
+      }
+      if (options.oxc && !options.patch) {
+        console.warn('[dts]: must use --patch with --oxc')
       }
       const { build } = await import('./index.js')
       const { output, elapsed, reused } = await build({

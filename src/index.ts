@@ -63,7 +63,12 @@ const KNOWN_ASSET_TYPES = [
 
 const DEFAULT_ASSETS_RE = new RegExp(`\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`)
 
-const suppress_codes = new Set(['UNRESOLVED_IMPORT', 'CIRCULAR_DEPENDENCY', 'EMPTY_BUNDLE'])
+const suppress_codes = new Set([
+  'UNRESOLVED_IMPORT',
+  'UNUSED_EXTERNAL_IMPORT',
+  'CIRCULAR_DEPENDENCY',
+  'EMPTY_BUNDLE',
+])
 
 const default_compiler_options: ts.CompilerOptions = {
   noEmit: false,

@@ -10,19 +10,23 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ### Bonus
 
-- Add `-p` to enable tripple-slash doc comments (will be transformed to `/** comments */`).
+- Add `-p` to enable:
+  - tripple-slash doc comments (will be transformed to `/** comments */`).
+  - add `--oxc` to generate types with `oxc-transform`.
 - Add env `NO_DTS` to turn the CLI to no-op, useful in local developing without type changes.
+- Add env `DTS_FAST` to reuse last build output.
 
 > [!IMPORTANT]
-> Do not use this package as a type-checking linter.
+> Do not use this package as a type-checking linter. You still need `tsc --noEmit`.
 > It intentionally ignores any type error to make it work with any codebase.
 > My goal is to generate `.d.ts` files instead of checking types.
 
 ## Changelog
 
-### Unreleased
+### 0.3.5
 
 - Use `TypeScript` itself instead of esbuild to resolve aliases.
+- Add `--oxc` to get types from `oxc-transform`, which can be super fast.
 
 ### 0.3.4
 
