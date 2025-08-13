@@ -1,4 +1,4 @@
-import type ts from 'typescript'
+import ts from 'typescript'
 
 import escalade from 'escalade/sync'
 import { FixDtsDefaultCjsExportsPlugin } from 'fix-dts-default-cjs-exports/rollup'
@@ -15,7 +15,6 @@ import {
   rollup,
 } from 'rollup'
 import dts, { Options } from 'rollup-plugin-dts'
-import { build as esbuild } from 'esbuild'
 import { createHash } from 'crypto'
 
 export { version } from '../package.json'
@@ -211,45 +210,35 @@ function get_external(files: InputOption, reject: Set<string>) {
 
 // The dts plugin doesn't handle tsconfig "paths" aliases (where I guess it
 // should, because it already depends on `typescript`, thus it has (?) enough
-// tools to implement the resolver). So I resolve them using esbuild here.
-// Ideally I should just use TypeScript itself to resolve modules, but it seems
-// too hard.
+// tools to implement the resolver). So I resolve them using TypeScript here.
 function resolve(): Plugin {
   return {
     name: 'resolve',
     async resolveId(id, importer, options) {
       // Ignore the entrypoints and any virtual files which are likely to not using path aliases.
       if (options.isEntry || id[0] === '\0' || id.includes('virtual:')) return
+      // Ignore relative paths, aliases tend to be absolute paths or '@/' or '~/'.
+      if (id[0] === '.') return
+      // Ignore css files.
+      if (CSS_LANGS_RE.test(id)) return
 
-      let result: string | undefined
-      await esbuild({
-        stdin: {
-          contents: `import ${JSON.stringify(id)}`,
-          resolveDir: importer ? join(importer, '..') : process.cwd(),
-        },
-        write: false,
-        bundle: true,
-        platform: 'node',
-        logLevel: 'silent',
-        plugins: [
-          {
-            name: 'resolve',
-            setup({ onLoad }) {
-              onLoad({ filter: /()/ }, args => {
-                result = args.path
-                return { contents: '' }
-              })
-            },
-          },
-        ],
-      }).catch(() => void 0)
+      const host = ts.sys
+      const config_file = ts.findConfigFile(importer || '.', host.fileExists, 'tsconfig.json')
+      if (!config_file) return
 
-      // Aliases are likely pointing to TS files.
-      if (result && /\.[cm]?js$/.test(result)) {
-        return
+      const { config, error } = ts.readConfigFile(config_file, host.readFile)
+      if (error) {
+        const message = ts.flattenDiagnosticMessageText(error.messageText, '\n')
+        this.error(`Error reading tsconfig file: ${message}`)
       }
 
-      return result
+      const { options: compilerOptions } = ts.parseJsonConfigFileContent(config, host, dirname(config_file))
+      if (!compilerOptions.paths && !compilerOptions.baseUrl) return
+
+      const resolved = ts.resolveModuleName(id, importer || '', compilerOptions, host)
+      if (resolved.resolvedModule) {
+        return resolved.resolvedModule.resolvedFileName
+      }
     },
   }
 }

@@ -20,6 +20,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### Unreleased
+
+- Use `TypeScript` itself instead of esbuild to resolve aliases.
+
 ### 0.3.4
 
 - Fix `-o file.d.mts` should emit correct file.

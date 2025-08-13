@@ -26,7 +26,6 @@
     "build": "esbuild-dev scripts/build.ts"
   },
   "dependencies": {
-    "esbuild": "*",
     "fix-dts-default-cjs-exports": "^1.0.1",
     "rollup": "^4.41.0",
     "rollup-plugin-dts": "^6.2.1",
@@ -37,6 +36,7 @@
     "@hyrious/esbuild-dev": "^0.10.13",
     "@hyrious/esbuild-plugin-external": "^0.1.4",
     "@types/node": "^20.17.48",
+    "esbuild": "^0.25.9",
     "escalade": "^3.2.0",
     "sade": "^1.8.1",
     "yoctocolors": "^2.1.1"
