@@ -27,19 +27,19 @@
   },
   "dependencies": {
     "fix-dts-default-cjs-exports": "^1.0.1",
-    "oxc-transform": "^0.82.1",
-    "rollup": "^4.41.0",
-    "rollup-plugin-dts": "^6.2.1",
-    "typescript": "^5.8.3"
+    "oxc-transform": "<=1",
+    "rollup": "^4.52.4",
+    "rollup-plugin-dts": "^6.2.3",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@hyrious/configs": "^0.1.4",
     "@hyrious/esbuild-dev": "^0.10.13",
     "@hyrious/esbuild-plugin-external": "^0.1.4",
-    "@types/node": "^20.17.48",
-    "esbuild": "^0.25.9",
+    "@types/node": "^24.7.0",
+    "esbuild": "^0.25.10",
     "escalade": "^3.2.0",
     "sade": "^1.8.1",
-    "yoctocolors": "^2.1.1"
+    "yoctocolors": "^2.1.2"
   }
 }

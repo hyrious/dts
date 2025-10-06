@@ -23,6 +23,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.6
+
+- Update deps, loosen `oxc-transform` version range.
+
 ### 0.3.5
 
 - Use `TypeScript` itself instead of esbuild to resolve aliases.
