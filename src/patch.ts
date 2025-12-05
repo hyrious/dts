@@ -45,7 +45,7 @@ function mangleComments(file) {
           'const treatTsAsDts = () => {',
           `const esmRequire = createRequire(${JSON.stringify(import.meta.url)});`,
           'const oxc = esmRequire("oxc-transform");',
-          'const oxcResult = oxc.isolatedDeclaration(id, mangleComments(code), { stripInternal: true });',
+          'const oxcResult = oxc.isolatedDeclarationSync(id, mangleComments(code), { stripInternal: true });',
           'if (oxcResult.errors.length) { throw new Error(oxcResult.errors.map(e => e.message).join("\\n")); }',
           'return transformPlugin.transform.call(this, oxcResult.code, getDeclarationId(id));',
         ].join('\n'),

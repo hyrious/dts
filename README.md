@@ -23,6 +23,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.7
+
+- Update patch script for `oxc-transform` changes.
+
 ### 0.3.6
 
 - Update deps, loosen `oxc-transform` version range.

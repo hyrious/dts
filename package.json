@@ -27,17 +27,17 @@
   },
   "dependencies": {
     "fix-dts-default-cjs-exports": "^1.0.1",
-    "oxc-transform": "<=1",
-    "rollup": "^4.52.4",
-    "rollup-plugin-dts": "^6.2.3",
+    "oxc-transform": ">=0.98.0 <=1",
+    "rollup": "^4.53.3",
+    "rollup-plugin-dts": "^6.3.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@hyrious/configs": "^0.1.4",
     "@hyrious/esbuild-dev": "^0.10.13",
     "@hyrious/esbuild-plugin-external": "^0.1.4",
-    "@types/node": "^24.7.0",
-    "esbuild": "^0.25.10",
+    "@types/node": "^24.10.1",
+    "esbuild": "^0.27.1",
     "escalade": "^3.2.0",
     "sade": "^1.8.1",
     "yoctocolors": "^2.1.2"
