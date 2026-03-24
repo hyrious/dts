@@ -23,6 +23,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.8
+
+- Add TypeScript 6.0 to the supported version range.
+
 ### 0.3.7
 
 - Update patch script for `oxc-transform` changes.
