@@ -53,18 +53,18 @@ function mangleComments(file) {
   return source
 }
 
-export async function load(url: string, context: any, nextLoad: any) {
+export function load(url: string, context: any, nextLoad: any, oxc: boolean) {
   if (!/node_modules[\\/]rollup-plugin-dts/.test(url)) {
     return nextLoad(url, context)
   }
 
-  let result = await nextLoad(url, context)
+  let result = nextLoad(url, context)
   if (result.format === 'commonjs') {
     // Since my package is ESM, there's no chance that the source is from the CJS module.
     return result
   }
   if (result.format === 'module') {
-    result.source = patch(url, result.source, import.meta.url.includes('oxc=1'))
+    result.source = patch(url, result.source, oxc)
   }
 
   return result

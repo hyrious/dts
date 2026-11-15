@@ -156,10 +156,12 @@ sade(name)
       if (include?.some(e => exclude?.includes(e))) {
         throw new Error('Cannot both include and exclude a module')
       }
-      if (options.patch && mod.register) {
-        mod.register(options.oxc ? './patch.js?oxc=1' : './patch.js', import.meta.url)
-      }
-      if (options.oxc && !options.patch) {
+      if (options.patch) {
+        const { load } = await import('./patch.js')
+        mod.registerHooks({
+          load: (url, context, nextLoad) => load(url, context, nextLoad, !!options.oxc),
+        })
+      } else if (options.oxc) {
         console.warn('[dts]: must use --patch with --oxc')
       }
       const { build } = await import('./index.js')
