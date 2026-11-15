@@ -36,8 +36,6 @@ function mangleComments(file) {
 }
 `
     if (oxc) {
-      // Skip creating the first program.
-      source = source.replace('const programs = [];', 'const programs = []; return programs;')
       // Patch the `treatTsAsDts` function to use oxc-transform.
       source = source.replace(
         'const treatTsAsDts = () => {',

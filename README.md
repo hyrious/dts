@@ -23,6 +23,10 @@ npx @hyrious/dts src/index.ts -o dist/index.d.ts
 
 ## Changelog
 
+### 0.3.9
+
+- Fix patch script for `rollup-plugin-dts@6.5.1`.
+
 ### 0.3.8
 
 - Add TypeScript 6.0 to the supported version range.
